@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="version" content="camera-normal-v2">
+    <title>My Little Photobooth 📸</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Poppins,sans-serif;
+  min-height:100vh;
+  background:linear-gradient(135deg,#fff1f7,#f6f0ff 48%,#eaf5ff);
+  color:#29243a;
+  display:flex;justify-content:center;align-items:center;
+  padding:18px;
+}
+.app{width:min(100%,520px)}
+.card{
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(255,255,255,.9);
+  border-radius:28px;
+  padding:26px 20px;
+  box-shadow:0 20px 60px rgba(75,55,95,.16);
+  text-align:center;
+  backdrop-filter:blur(14px);
+}
+.hidden{display:none!important}
+h1,h2{font-family:Caveat,cursive;color:#6d4c7d}
+h1{font-size:3rem;line-height:1.05}
+h2{font-size:2.35rem}
+p{color:#777080;font-size:.88rem;line-height:1.6}
+.small{font-size:.76rem}
+.primary,.secondary,.danger{
+  border:0;border-radius:999px;padding:12px 20px;
+  font-family:inherit;font-weight:600;cursor:pointer;
+  transition:.2s;
+}
+.primary{background:#dca8c9;color:#fff;box-shadow:0 8px 20px rgba(185,116,161,.22)}
+.secondary{background:#f0e8f4;color:#674c72}
+.danger{background:#ffe2e8;color:#a64a5c}
+button:hover{transform:translateY(-2px)}
+.hero{font-size:5rem;margin:8px 0;filter:drop-shadow(0 10px 15px rgba(100,70,120,.18))}
+.home-text{margin:8px auto 22px;max-width:350px}
+.dots{display:flex;justify-content:center;gap:7px;margin:15px 0}
+.dot{width:7px;height:7px;border-radius:50%;background:#d9c9df}
+.dot.active{width:20px;border-radius:10px;background:#b887ad}
+
+/* FRAME CAROUSEL - DRAG / SWIPE */
+.carousel{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  margin:18px auto 8px;
+  touch-action:pan-y;
+}
+.frame-stage{
+  width:290px;
+  height:410px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+  border-radius:18px;
+}
+.frame-stage.dragging{
+  cursor:grabbing;
+}
+.frame-stage::before,
+.frame-stage::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:rgba(255,255,255,.78);
+  box-shadow:0 5px 15px rgba(70,50,80,.12);
+  transform:translateY(-50%);
+  z-index:8;
+  pointer-events:none;
+}
+.frame-stage::before{
+  left:8px;
+  border-left:2px solid #8b6b96;
+  border-bottom:2px solid #8b6b96;
+  transform:translateY(-50%) rotate(45deg) scale(.42);
+}
+.frame-stage::after{
+  right:8px;
+  border-right:2px solid #8b6b96;
+  border-top:2px solid #8b6b96;
+  transform:translateY(-50%) rotate(45deg) scale(.42);
+}
+.frame-strip{
+  will-change:transform;
+  transition:transform .18s ease;
+}
+.frame-strip{
+  width:178px;height:385px;padding:10px 10px 13px;
+  display:flex;flex-direction:column;gap:7px;
+  box-shadow:0 14px 30px rgba(55,40,65,.18);
+  border-radius:4px;
+  position:relative;overflow:hidden;
+  transition:.3s;
+}
+.frame-strip .slot{
+  flex:1;min-height:0;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:#eee;
+}
+.slot .placeholder{font-size:1.5rem;opacity:.35}
+.frame-strip .caption{
+  font-family:Caveat,cursive;font-size:19px;text-align:center;
+  line-height:1;color:inherit;height:20px;
+}
+.frame-name{font-weight:600;margin-top:6px}
+.frame-number{font-size:.76rem;color:#999;margin:3px 0 15px}
+
+/* different frame themes */
+.theme-pink{background:#ffdce9;color:#713e59}
+.theme-blue{background:#dcecff;color:#405a7a}
+.theme-floral{background:#fff1d9;color:#7d5940}
+.theme-dark{background:#20202c;color:#fff}
+.theme-retro{background:#f3d9b1;color:#67462d}
+.theme-lavender{background:#e8dcff;color:#594675}
+.theme-mint{background:#d9f3e8;color:#3d6a58}
+.theme-blackpink{background:#18151b;color:#ffb4d2}
+
+.frame-strip:before,.frame-strip:after{
+  content:"";position:absolute;pointer-events:none;z-index:3;
+}
+.theme-floral:before{
+  inset:0;
+  background-image:radial-gradient(circle at 10% 10%,#f49ab7 0 3px,transparent 4px),
+  radial-gradient(circle at 90% 30%,#f4b86a 0 3px,transparent 4px),
+  radial-gradient(circle at 15% 75%,#9bc6a8 0 3px,transparent 4px);
+  opacity:.6;
+}
+.theme-dark:after{inset:5px;border:1px solid rgba(255,255,255,.3)}
+.theme-retro:before{inset:0;border:7px double rgba(103,70,45,.2)}
+.theme-blackpink:after{inset:5px;border:1px solid rgba(255,180,210,.45)}
+
+.controls{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+
+
+/* 3 PHOTO PICKER */
+.photo-slots{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:18px 0 12px;
+}
+.photo-choice-card{
+  background:#fff;
+  border:1px solid #eadfeb;
+  border-radius:16px;
+  padding:10px 7px;
+  min-width:0;
+  box-shadow:0 5px 15px rgba(80,60,90,.06);
+}
+.photo-choice-card.selected{
+  border-color:#c79abb;
+  box-shadow:0 0 0 2px #ead6e7;
+}
+.photo-number{
+  font-size:.65rem;
+  color:#a18da7;
+  font-weight:700;
+  letter-spacing:1px;
+}
+.photo-thumb{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:10px;
+  background:#f3edf5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.5rem;
+  overflow:hidden;
+  margin:5px 0 7px;
+}
+.photo-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.upload-mini{
+  display:block;
+  background:#f4eaf5;
+  color:#705575;
+  border-radius:999px;
+  padding:7px 4px;
+  margin-top:7px;
+  font-size:.65rem;
+  font-weight:600;
+  cursor:pointer;
+}
+.upload-mini input{display:none}
+.camera-choice{
+  border:1px solid #eadfeb;
+  background:#fff;
+  color:#674c72;
+  border-radius:999px;
+  padding:11px 17px;
+  font:inherit;
+  font-size:.78rem;
+  font-weight:600;
+  cursor:pointer;
+  margin:5px 0 8px;
+}
+.disabled-btn{opacity:.45;pointer-events:none;margin-top:12px}
+.camera-slot-info{
+  color:#fff;
+  font-size:.75rem;
+  padding:9px 5px 0;
+}
+.adjust-tabs{
+  display:flex;
+  gap:7px;
+  justify-content:center;
+  margin:16px 0 10px;
+}
+.adjust-tab{
+  border:1px solid #dfd4e2;
+  background:#fff;
+  color:#77627d;
+  padding:8px 14px;
+  border-radius:999px;
+  font:inherit;
+  font-size:.72rem;
+  font-weight:600;
+  cursor:pointer;
+}
+.adjust-tab.active{
+  background:#ead6e7;
+  border-color:#c99fbe;
+  color:#674c72;
+}
+.adjust-frame-guide{
+  width:100%;
+  background:#f2ebf3;
+  border-radius:18px;
+  padding:8px;
+  box-shadow:inset 0 0 0 1px #eadfeb;
+}
+.adjust-current{
+  font-size:.76rem;
+  font-weight:600;
+  color:#806987;
+  margin-top:8px;
+}
+.adjust-controls{
+  display:grid;
+  grid-template-columns:52px 1fr 52px;
+  align-items:center;
+  gap:10px;
+  margin:8px auto;
+  max-width:300px;
+}
+.round-control{
+  width:45px;height:45px;
+  border-radius:50%;
+  border:1px solid #dfd4e2;
+  background:#fff;
+  color:#6d5474;
+  font-size:1.1rem;
+  cursor:pointer;
+}
+.direction-label{
+  font-size:.67rem;
+  color:#9a899e;
+  font-weight:600;
+  letter-spacing:.5px;
+}
+
+/* PHOTO INPUT */
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}
+.choice{
+  border:1px solid #eadfeb;background:#fff;border-radius:18px;padding:20px 10px;
+  cursor:pointer;transition:.2s;
+}
+.choice:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(80,60,90,.1)}
+.choice-icon{font-size:2.2rem;margin-bottom:5px}
+input[type=file]{display:none}
+.camera-box{width:100%;border-radius:18px;overflow:hidden;background:#18151f;margin:15px 0;position:relative}
+video{width:100%;display:block;max-height:420px;object-fit:cover;transform:scaleX(-1)!important;-webkit-transform:scaleX(-1)!important;}
+.camera-actions{display:flex;gap:8px;padding:10px;justify-content:center}
+canvas.preview{max-width:100%;border-radius:16px;background:#ddd}
+
+/* ADJUST */
+.adjust-wrap{margin:15px auto;position:relative;width:min(100%,390px)}
+.adjust-preview{
+  width:100%;max-height:500px;display:block;border-radius:18px;
+  background:#eee;object-fit:contain;
+}
+.range{width:100%;accent-color:#b887ad}
+.adjust-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:12px 0}
+.label{font-size:.75rem;color:#777}
+.zoom-value{font-size:.78rem;font-weight:600}
+.help{font-size:.72rem;color:#8d8290;margin-top:8px}
+
+/* CUSTOMIZE */
+.preview-final{display:flex;justify-content:center;margin:12px 0}
+.final-strip{
+  width:170px;background:#fff;padding:9px 9px 18px;
+  box-shadow:0 12px 30px rgba(60,40,70,.2);border-radius:3px;
+}
+.final-strip canvas{width:100%;display:block}
+.field{text-align:left;margin:12px 0}
+.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:6px}
+.field input[type=text],.field select{
+  width:100%;padding:11px 12px;border:1px solid #dfd4e2;border-radius:12px;
+  font:inherit;font-size:.82rem;background:#fff;outline:none;
+}
+.options{display:flex;gap:8px;flex-wrap:wrap}
+.pill{
+  border:1px solid #dfd4e2;background:#fff;border-radius:999px;padding:8px 12px;
+  font-size:.74rem;cursor:pointer;
+}
+.pill.active{background:#ead6e7;border-color:#c99fbe}
+.color-row{display:flex;gap:10px;align-items:center}
+input[type=color]{width:40px;height:36px;border:0;background:none;cursor:pointer}
+.checkbox{display:flex;gap:8px;align-items:center;font-size:.8rem}
+
+/* RESULT */
+.result-img{max-width:280px;width:100%;display:block;margin:15px auto;box-shadow:0 15px 35px rgba(60,40,70,.2)}
+.notice{
+  position:fixed;left:50%;bottom:25px;transform:translate(-50%,20px);
+  background:#31283a;color:#fff;padding:12px 18px;border-radius:999px;
+  font-size:.78rem;opacity:0;pointer-events:none;transition:.3s;z-index:99;
+}
+.notice.show{opacity:1;transform:translate(-50%,0)}
+.step-title{margin-bottom:4px}
+.back{margin-top:12px;background:none;border:0;color:#8b728f;cursor:pointer;font:inherit;font-size:.78rem}
+@media(max-width:430px){
+  .card{padding:22px 14px}
+  .frame-stage{width:215px;height:375px}
+  .frame-strip{width:160px;height:355px}
+  .frame-stage{width:250px;height:375px}
+}
+
+/* DIRECT PHOTO DRAG */
+.direct-adjust-box{
+  margin:12px auto 16px;
+  width:min(100%,420px);
+}
+.direct-adjust-hint{
+  text-align:center;
+  color:#765d7d;
+  font-size:.78rem;
+  margin-bottom:8px;
+}
+.direct-adjust-hint.small{
+  margin-top:8px;
+  margin-bottom:0;
+  font-size:.7rem;
+  color:#9a889f;
+}
+.adjust-canvas-wrap{
+  position:relative;
+  width:100%;
+  max-width:420px;
+  margin:auto;
+  border-radius:16px;
+  overflow:hidden;
+  cursor:grab;
+  touch-action:none;
+  background:#17121c;
+  box-shadow:0 10px 28px rgba(60,35,70,.16);
+}
+.adjust-canvas-wrap.dragging{
+  cursor:grabbing;
+}
+.adjust-canvas-wrap::after{
+  content:"GESER FOTO";
+  position:absolute;
+  left:50%;
+  bottom:10px;
+  transform:translateX(-50%);
+  padding:5px 11px;
+  border-radius:999px;
+  background:rgba(0,0,0,.42);
+  color:#fff;
+  font-size:.65rem;
+  letter-spacing:.5px;
+  pointer-events:none;
+}
+#adjustCanvas{
+  display:block;
+  width:100%;
+  height:auto;
+  pointer-events:none;
+  user-select:none;
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card">
+
+    <!-- HOME -->
+    <section id="home">
+      <div class="hero">📸</div>
+      <h1>My Little<br>Photobooth</h1>
+      <p class="home-text">Capture your little moments and turn them into a cute 3-strip photo. ✨</p>
+      <button class="primary" onclick="go('frames')">Mulai Foto 📸</button>
+    </section>
+
+    <!-- FRAME -->
+    <section id="frames" class="hidden">
+      <h2>Choose Your Frame ✨</h2>
+      <p>Geser frame ke kiri atau kanan untuk melihat pilihan ✨</p>
+
+      <div class="carousel">
+        <div class="frame-stage" id="frameStage" aria-label="Geser untuk memilih frame">
+          <div id="framePreview" class="frame-strip theme-pink">
+            <div class="slot"><span class="placeholder">📷</span></div>
+            <div class="slot"><span class="placeholder">📷</span></div>
+            <div class="slot"><span class="placeholder">📷</span></div>
+            <div class="caption">our little moments ♡</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="frameName" class="frame-name">Soft Pink</div>
+      <div id="frameNumber" class="frame-number">Frame 1 / 8</div>
+      <div class="dots" id="dots"></div>
+
+      <button class="primary" onclick="selectFrame()">✨ Pilih Frame</button>
+      <br>
+      <button class="back" onclick="go('home')">← Kembali</button>
+    </section>
+
+
+    <!-- PHOTO SOURCE -->
+    <section id="source" class="hidden">
+      <h2>Choose 3 Photos 📸</h2>
+      <p>Pilih <b>3 foto berbeda</b> untuk mengisi 3 strip photobooth.</p>
+
+      <div class="photo-slots" id="photoSlots">
+        <div class="photo-choice-card" id="photoCard0">
+          <div class="photo-number">01</div>
+          <div class="photo-thumb" id="thumb0">📷</div>
+          <strong>Foto 1</strong>
+          <label class="upload-mini">
+            🖼️ Pilih Foto
+            <input type="file" accept="image/*" onchange="loadImage(event,0)">
+          </label>
+        </div>
+
+        <div class="photo-choice-card" id="photoCard1">
+          <div class="photo-number">02</div>
+          <div class="photo-thumb" id="thumb1">📷</div>
+          <strong>Foto 2</strong>
+          <label class="upload-mini">
+            🖼️ Pilih Foto
+            <input type="file" accept="image/*" onchange="loadImage(event,1)">
+          </label>
+        </div>
+
+        <div class="photo-choice-card" id="photoCard2">
+          <div class="photo-number">03</div>
+          <div class="photo-thumb" id="thumb2">📷</div>
+          <strong>Foto 3</strong>
+          <label class="upload-mini">
+            🖼️ Pilih Foto
+            <input type="file" accept="image/*" onchange="loadImage(event,2)">
+          </label>
+        </div>
+      </div>
+
+      <button class="camera-choice" onclick="startCamera()">
+        📷 Ambil Foto dari Kamera
+      </button>
+
+      <p class="small" id="photoProgress">0 / 3 foto dipilih</p>
+
+      <div id="cameraArea" class="camera-box hidden">
+        <video id="video" autoplay playsinline></video>
+        <div class="camera-slot-info">
+          Foto akan masuk ke <b id="cameraTarget">Foto 1</b>
+        </div>
+        <div class="camera-actions">
+          <button class="primary" onclick="capturePhoto()">● Jepret</button>
+          <button class="secondary" onclick="stopCamera()">Tutup</button>
+        </div>
+      </div>
+
+      <button id="continuePhotos" class="primary disabled-btn" onclick="startAdjustAll()">
+        Lanjut ke Atur Foto ✨
+      </button>
+      <br>
+      <button class="back" onclick="go('frames')">← Ganti Frame</button>
+    </section>
+
+
+    <!-- ADJUST -->
+    <section id="adjust" class="hidden">
+      <h2>Atur 3 Foto ✨</h2>
+      <p>Atur setiap foto secara terpisah. Geser dan zoom sampai wajah/objek pas.</p>
+
+      <div class="adjust-tabs">
+        <button class="adjust-tab active" onclick="selectAdjustPhoto(0)">Foto 1</button>
+        <button class="adjust-tab" onclick="selectAdjustPhoto(1)">Foto 2</button>
+        <button class="adjust-tab" onclick="selectAdjustPhoto(2)">Foto 3</button>
+      </div>
+
+      <p class="adjust-current" id="adjustCurrent">Sedang mengatur Foto 1</p>
+
+      <div class="direct-adjust-box">
+        <div class="direct-adjust-hint">✋ Tarik fotonya langsung ke kiri, kanan, atas, atau bawah</div>
+        <div class="adjust-canvas-wrap" id="adjustCanvasWrap">
+          <canvas id="adjustCanvas" class="preview" width="420" height="250"></canvas>
+        </div>
+        <div class="direct-adjust-hint small">
+          📱 HP: geser dengan jari &nbsp; • &nbsp; 🖱️ PC: klik-tahan lalu tarik
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Zoom Foto <span id="zoomText">1.00×</span></label>
+        <input id="zoomRange" class="range" type="range" min="1" max="3" step=".01" value="1"
+               oninput="setZoom(this.value)">
+      </div>
+
+      <div class="controls">
+        <button class="secondary" onclick="resetAdjust()">↺ Reset Foto Ini</button>
+        <button class="primary" onclick="continueCustomize()">Lanjut ✨</button>
+      </div>
+
+      <p class="help">Tips: pilih Foto 1/2/3 di atas, lalu atur masing-masing sampai komposisinya pas.</p>
+    </section>
+
+    <!-- CUSTOMIZE -->
+
+    <section id="customize" class="hidden">
+      <h2>Customize Your Strip 💕</h2>
+      <p>Tambahkan tulisan dan tanggal sesuai keinginanmu.</p>
+
+      <div class="preview-final">
+        <div class="final-strip">
+          <canvas id="finalPreview"></canvas>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tulisan bawah</label>
+        <input id="captionInput" type="text" maxlength="30" value="our little moments ♡" oninput="renderFinal()">
+      </div>
+
+      <div class="field">
+        <label>Model teks</label>
+        <div class="options" id="fontOptions">
+          <button class="pill active" onclick="chooseFont(this,'Caveat')">Handwriting</button>
+          <button class="pill" onclick="chooseFont(this,'Poppins')">Clean</button>
+          <button class="pill" onclick="chooseFont(this,'Georgia')">Classic</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Warna teks</label>
+        <div class="color-row">
+          <input id="textColor" type="color" value="#6d4c7d" oninput="renderFinal()">
+          <span class="small">Pilih warna tulisan</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Tanggal</label>
+        <div class="checkbox">
+          <input id="showDate" type="checkbox" onchange="renderFinal()">
+          <span>Tampilkan tanggal</span>
+        </div>
+        <select id="dateFormat" onchange="renderFinal()" style="margin-top:8px">
+          <option value="long">17 AUGUST 2026</option>
+          <option value="slash">17/08/2026</option>
+          <option value="dash">17-08-2026</option>
+        </select>
+      </div>
+
+      <div class="controls">
+        <button class="secondary" onclick="go('adjust')">← Edit Foto</button>
+        <button class="primary" onclick="makeResult()">Selesai ✨</button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="result" class="hidden">
+      <div class="hero" style="font-size:4rem">🎞️</div>
+      <h2>Your Photo Strip ✨</h2>
+      <p>Sudah jadi! Simpan kenangan kecilmu.</p>
+      <img id="resultImage" class="result-img" alt="Hasil photobooth">
+      <div class="controls">
+        <button class="primary" onclick="downloadResult()">💾 Simpan Foto</button>
+        <button class="secondary" onclick="newPhoto()">🔄 Buat Lagi</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div id="notice" class="notice"></div>
+
+<script>
+const frames = [
+  {name:'Soft Pink',theme:'theme-pink',bg:'#ffdce9',fg:'#713e59',accent:'#fff4f8'},
+  {name:'Baby Blue',theme:'theme-blue',bg:'#dcecff',fg:'#405a7a',accent:'#f5faff'},
+  {name:'Floral Cream',theme:'theme-floral',bg:'#fff1d9',fg:'#7d5940',accent:'#fffaf1'},
+  {name:'Midnight',theme:'theme-dark',bg:'#20202c',fg:'#ffffff',accent:'#343448'},
+  {name:'Retro Film',theme:'theme-retro',bg:'#f3d9b1',fg:'#67462d',accent:'#fff4df'},
+  {name:'Lavender',theme:'theme-lavender',bg:'#e8dcff',fg:'#594675',accent:'#faf7ff'},
+  {name:'Mint Cute',theme:'theme-mint',bg:'#d9f3e8',fg:'#3d6a58',accent:'#f4fffa'},
+  {name:'Black Pink',theme:'theme-blackpink',bg:'#18151b',fg:'#ffb4d2',accent:'#30252e'}
+];
+
+
+let frameIndex=0;
+let selectedFrame=frames[0];
+
+let photos=[null,null,null];
+let adjustments=[
+  {scale:1,x:0,y:0},
+  {scale:1,x:0,y:0},
+  {scale:1,x:0,y:0}
+];
+let adjustIndex=0;
+let stream=null;
+let selectedFont='Caveat';
+let finalDataURL='';
+
+const ids=['home','frames','source','adjust','customize','result'];
+
+function go(id){
+  ids.forEach(x=>document.getElementById(x).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if(id==='frames') updateFrame();
+  if(id==='customize') renderFinal();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function updateFrame(){
+  const f=frames[frameIndex];
+  const p=document.getElementById('framePreview');
+  p.className='frame-strip '+f.theme;
+  p.style.background=f.bg;
+  p.style.color=f.fg;
+  document.getElementById('frameName').textContent=f.name;
+  document.getElementById('frameNumber').textContent=`Frame ${frameIndex+1} / ${frames.length}`;
+  document.getElementById('dots').innerHTML=frames.map((_,i)=>
+    `<span class="dot ${i===frameIndex?'active':''}></span>`).join('');
+}
+
+function changeFrame(dir){
+  frameIndex=(frameIndex+dir+frames.length)%frames.length;
+  updateFrame();
+}
+
+/* =========================================
+   DRAG / SWIPE FRAME
+========================================= */
+(function setupFrameSwipe(){
+  const stage = document.getElementById('frameStage');
+  const preview = document.getElementById('framePreview');
+
+  if(!stage || !preview) return;
+
+  let startX = 0;
+  let currentX = 0;
+  let dragging = false;
+  let moved = false;
+
+  function pointerDown(e){
+    dragging = true;
+    moved = false;
+    startX = e.clientX;
+    currentX = e.clientX;
+    stage.classList.add('dragging');
+
+    if(e.pointerId !== undefined && stage.setPointerCapture){
+      try { stage.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+  }
+
+  function pointerMove(e){
+    if(!dragging) return;
+
+    currentX = e.clientX;
+    const dx = currentX - startX;
+
+    if(Math.abs(dx) > 5) moved = true;
+
+    /* Ikuti jari/mouse sedikit saat digeser */
+    preview.style.transform =
+      `translateX(${dx * 0.18}px) scale(${1 - Math.min(Math.abs(dx),120)/1200})`;
+  }
+
+  function pointerUp(){
+    if(!dragging) return;
+
+    const dx = currentX - startX;
+    dragging = false;
+    stage.classList.remove('dragging');
+
+    preview.style.transform = '';
+
+    /* Minimal jarak geser agar frame berganti */
+    if(Math.abs(dx) >= 45){
+      changeFrame(dx < 0 ? 1 : -1);
+    }
+  }
+
+  stage.addEventListener('pointerdown', pointerDown);
+  stage.addEventListener('pointermove', pointerMove);
+  stage.addEventListener('pointerup', pointerUp);
+  stage.addEventListener('pointercancel', pointerUp);
+  stage.addEventListener('pointerleave', () => {
+    if(dragging) pointerUp();
+  });
+
+  /* Supaya drag tidak dianggap memilih/menyeret gambar */
+  stage.addEventListener('dragstart', e => e.preventDefault());
+
+  /* Touch swipe tetap halus */
+  stage.addEventListener('click', e => {
+    if(moved) e.preventDefault();
+  });
+})();
+
+function selectFrame(){
+  selectedFrame=frames[frameIndex];
+  resetPhotos();
+  go('source');
+  notify('Frame dipilih ✨ Sekarang pilih 3 foto!');
+}
+
+function resetPhotos(){
+  photos=[null,null,null];
+  adjustments=[
+    {scale:1,x:0,y:0},
+    {scale:1,x:0,y:0},
+    {scale:1,x:0,y:0}
+  ];
+  for(let i=0;i<3;i++){
+    document.getElementById('thumb'+i).innerHTML='📷';
+    document.getElementById('photoCard'+i).classList.remove('selected');
+  }
+  updatePhotoProgress();
+}
+
+function updatePhotoProgress(){
+  const count=photos.filter(Boolean).length;
+  document.getElementById('photoProgress').textContent=`${count} / 3 foto dipilih`;
+  document.getElementById('continuePhotos').classList.toggle('disabled-btn',count!==3);
+}
+
+function loadImage(event,index){
+  const file=event.target.files[0];
+  if(!file)return;
+
+  const reader=new FileReader();
+
+  reader.onload=ev=>{
+    const img=new Image();
+
+    img.onload=()=>{
+      photos[index]=img;
+      adjustments[index]={scale:1,x:0,y:0};
+
+      const thumb=document.getElementById('thumb'+index);
+      thumb.innerHTML='';
+
+      const t=new Image();
+      t.src=ev.target.result;
+      t.alt=`Foto ${index+1}`;
+      thumb.appendChild(t);
+
+      document.getElementById('photoCard'+index).classList.add('selected');
+      updatePhotoProgress();
+      notify(`Foto ${index+1} berhasil dipilih 💕`);
+    };
+
+    img.src=ev.target.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+async function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    notify('Kamera tidak tersedia. Gunakan upload foto ya 📷');
+    return;
+  }
+
+  const target=photos.findIndex(p=>!p);
+  adjustIndex=target===-1?0:target;
+
+  document.getElementById('cameraTarget').textContent=`Foto ${adjustIndex+1}`;
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:'user',
+        width:{ideal:1080},
+        height:{ideal:1080}
+      },
+      audio:false
+    });
+
+    const videoEl=document.getElementById('video');
+    videoEl.srcObject=stream;
+    // Preview kamera mirror seperti kamera selfie.
+    videoEl.style.transform='scaleX(-1)';
+    videoEl.style.webkitTransform='scaleX(-1)';
+    videoEl.style.transformOrigin='center center';
+    videoEl.style.webkitTransformOrigin='center center';
+    document.getElementById('cameraArea').classList.remove('hidden');
+
+  }catch(e){
+    notify('Izin kamera ditolak atau kamera tidak tersedia 🥺');
+  }
+}
+
+function stopCamera(){
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream=null;
+  }
+
+  document.getElementById('cameraArea').classList.add('hidden');
+}
+
+function capturePhoto(){
+  const video=document.getElementById('video');
+
+  const c=document.createElement('canvas');
+  c.width=video.videoWidth||1080;
+  c.height=video.videoHeight||1080;
+
+  const ctx=c.getContext('2d');
+
+  // Preview kamera mirror, jadi hasil foto juga dibuat mirror
+  // agar hasil jepretan sama dengan yang terlihat di kamera.
+  ctx.save();
+  ctx.translate(c.width, 0);
+  ctx.scale(-1, 1);
+
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    c.width,
+    c.height
+  );
+
+  ctx.restore();
+
+  c.toBlob(blob=>{
+    const img=new Image();
+
+    img.onload=()=>{
+      photos[adjustIndex]=img;
+      adjustments[adjustIndex]={scale:1,x:0,y:0};
+
+      const thumb=document.getElementById('thumb'+adjustIndex);
+      thumb.innerHTML='';
+
+      const t=new Image();
+      t.src=c.toDataURL('image/jpeg',.92);
+      t.alt=`Foto ${adjustIndex+1}`;
+      thumb.appendChild(t);
+
+      document.getElementById('photoCard'+adjustIndex).classList.add('selected');
+
+      stopCamera();
+      updatePhotoProgress();
+
+      const next=photos.findIndex(p=>!p);
+
+      if(next!==-1){
+        notify(`Foto ${adjustIndex+1} tersimpan! Ambil Foto ${next+1} 📸`);
+      }else{
+        notify('3 foto sudah lengkap! ✨');
+      }
+    };
+
+    img.src=URL.createObjectURL(blob);
+
+  },'image/jpeg',.92);
+}
+
+function startAdjustAll(){
+  if(photos.some(p=>!p)){
+    notify('Pilih 3 foto terlebih dahulu ya 🥺');
+    return;
+  }
+
+  adjustments=[
+    {scale:1,x:0,y:0},
+    {scale:1,x:0,y:0},
+    {scale:1,x:0,y:0}
+  ];
+
+  go('adjust');
+  selectAdjustPhoto(0);
+}
+
+function selectAdjustPhoto(index){
+  if(!photos[index]){
+    notify(`Foto ${index+1} belum dipilih 🥺`);
+    return;
+  }
+
+  adjustIndex=index;
+
+  document.querySelectorAll('.adjust-tab').forEach((b,i)=>{
+    b.classList.toggle('active',i===index);
+  });
+
+  document.getElementById('adjustCurrent').textContent=
+    `Sedang mengatur Foto ${index+1}`;
+
+  document.getElementById('zoomRange').value=
+    adjustments[index].scale;
+
+  document.getElementById('zoomText').textContent=
+    adjustments[index].scale.toFixed(2)+'×';
+
+  drawAdjust();
+}
+
+function setZoom(v){
+  adjustments[adjustIndex].scale=parseFloat(v);
+
+  document.getElementById('zoomText').textContent=
+    parseFloat(v).toFixed(2)+'×';
+
+  drawAdjust();
+}
+
+function movePhoto(x,y){
+  adjustments[adjustIndex].x+=x;
+  adjustments[adjustIndex].y+=y;
+  drawAdjust();
+}
+
+function resetAdjust(){
+  adjustments[adjustIndex]={
+    scale:1,
+    x:0,
+    y:0
+  };
+
+  document.getElementById('zoomRange').value=1;
+  document.getElementById('zoomText').textContent='1.00×';
+
+  drawAdjust();
+}
+
+function drawAdjust(){
+  const img=photos[adjustIndex];
+  if(!img)return;
+
+  const c=document.getElementById('adjustCanvas');
+  const ctx=c.getContext('2d');
+
+  const W=c.width;
+  const H=c.height;
+
+  ctx.clearRect(0,0,W,H);
+
+  ctx.fillStyle=selectedFrame.bg;
+  ctx.fillRect(0,0,W,H);
+
+  const pad=16;
+  const slotW=W-pad*2;
+  const slotH=H-pad*2;
+
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.roundRect(
+    pad,pad,
+    slotW,slotH,
+    12
+  );
+
+  ctx.clip();
+
+  drawCover(
+    ctx,
+    img,
+    W/2+adjustments[adjustIndex].x,
+    H/2+adjustments[adjustIndex].y,
+    slotW,
+    slotH,
+    adjustments[adjustIndex].scale
+  );
+
+  ctx.restore();
+
+  // Border + safe area.
+  ctx.strokeStyle='rgba(255,255,255,.9)';
+  ctx.lineWidth=2;
+  ctx.strokeRect(pad,pad,slotW,slotH);
+
+  ctx.strokeStyle='rgba(255,255,255,.5)';
+  ctx.setLineDash([7,7]);
+  ctx.strokeRect(
+    pad+18,
+    pad+18,
+    slotW-36,
+    slotH-36
+  );
+  ctx.setLineDash([]);
+
+  ctx.fillStyle='rgba(0,0,0,.55)';
+  ctx.fillRect(18,H-42,155,25);
+
+  ctx.fillStyle='#fff';
+  ctx.font='600 12px Poppins';
+  ctx.textAlign='left';
+
+  ctx.fillText(
+    `Foto ${adjustIndex+1} • ${adjustments[adjustIndex].scale.toFixed(2)}×`,
+    28,H-25
+  );
+}
+
+
+/* =========================================
+   DRAG FOTO LANGSUNG DI CANVAS
+   Tidak perlu tombol kiri/kanan/atas/bawah.
+========================================= */
+(function setupDirectAdjustDrag(){
+  const wrap=document.getElementById('adjustCanvasWrap');
+  if(!wrap) return;
+
+  let dragging=false;
+  let startX=0;
+  let startY=0;
+  let startPhotoX=0;
+  let startPhotoY=0;
+
+  function down(e){
+    dragging=true;
+    startX=e.clientX;
+    startY=e.clientY;
+    startPhotoX=adjustments[adjustIndex].x;
+    startPhotoY=adjustments[adjustIndex].y;
+    wrap.classList.add('dragging');
+
+    try{ wrap.setPointerCapture(e.pointerId); }catch(_){}
+  }
+
+  function move(e){
+    if(!dragging) return;
+
+    const dx=e.clientX-startX;
+    const dy=e.clientY-startY;
+
+    /*
+      Skala koordinat karena canvas tampil responsif.
+      Jadi tarikan jari/mouse tetap terasa natural.
+    */
+    const canvas=document.getElementById('adjustCanvas');
+    const rect=canvas.getBoundingClientRect();
+    const sx=canvas.width/rect.width;
+    const sy=canvas.height/rect.height;
+
+    adjustments[adjustIndex].x=startPhotoX+dx*sx;
+    adjustments[adjustIndex].y=startPhotoY+dy*sy;
+
+    drawAdjust();
+  }
+
+  function up(e){
+    if(!dragging) return;
+    dragging=false;
+    wrap.classList.remove('dragging');
+    try{ wrap.releasePointerCapture(e.pointerId); }catch(_){}
+  }
+
+  wrap.addEventListener('pointerdown',down);
+  wrap.addEventListener('pointermove',move);
+  wrap.addEventListener('pointerup',up);
+  wrap.addEventListener('pointercancel',up);
+  wrap.addEventListener('lostpointercapture',()=>{
+    dragging=false;
+    wrap.classList.remove('dragging');
+  });
+
+  wrap.addEventListener('dragstart',e=>e.preventDefault());
+})();
+
+function drawCover(ctx,img,cx,cy,w,h,s=1){
+  const ratio=Math.max(
+    w/img.width,
+    h/img.height
+  )*s;
+
+  const dw=img.width*ratio;
+  const dh=img.height*ratio;
+
+  ctx.drawImage(
+    img,
+    cx-dw/2,
+    cy-dh/2,
+    dw,
+    dh
+  );
+}
+
+function continueCustomize(){
+  go('customize');
+  renderFinal();
+}
+
+function chooseFont(el,font){
+  selectedFont=font;
+
+  document
+    .querySelectorAll('#fontOptions .pill')
+    .forEach(x=>x.classList.remove('active'));
+
+  el.classList.add('active');
+
+  renderFinal();
+}
+
+function currentDate(){
+  const d=new Date();
+
+  const day=String(d.getDate()).padStart(2,'0');
+
+  const month=d.toLocaleString(
+    'en-US',
+    {month:'long'}
+  ).toUpperCase();
+
+  const year=d.getFullYear();
+
+  const fmt=document.getElementById('dateFormat').value;
+
+  if(fmt==='slash'){
+    return `${day}/${String(d.getMonth()+1).padStart(2,'0')}/${year}`;
+  }
+
+  if(fmt==='dash'){
+    return `${day}-${String(d.getMonth()+1).padStart(2,'0')}-${year}`;
+  }
+
+  return `${day} ${month} ${year}`;
+}
+
+function renderFinal(){
+  if(photos.some(p=>!p))return;
+
+  const c=document.getElementById('finalPreview');
+
+  const W=340;
+  const H=760;
+
+  c.width=W;
+  c.height=H;
+
+  const ctx=c.getContext('2d');
+  const f=selectedFrame;
+
+  ctx.fillStyle=f.bg;
+  ctx.fillRect(0,0,W,H);
+
+  const pad=20;
+  const gap=10;
+  const captionH=95;
+
+  const slotH=
+    (H-pad*2-captionH-gap*2)/3;
+
+  const slotW=W-pad*2;
+
+  // Masing-masing strip memakai foto yang berbeda.
+  for(let i=0;i<3;i++){
+
+    const y=
+      pad+i*(slotH+gap);
+
+    const a=adjustments[i];
+
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.roundRect(
+      pad,y,
+      slotW,slotH,
+      4
+    );
+
+    ctx.clip();
+
+    drawCover(
+      ctx,
+      photos[i],
+      pad+slotW/2+
+        a.x*(W/420),
+
+      y+slotH/2+
+        a.y*(H/760),
+
+      slotW,
+      slotH,
+      a.scale
+    );
+
+    ctx.restore();
+  }
+
+  /*
+   * Warna tulisan harus mengikuti color picker.
+   * Sebelumnya masih memakai f.fg (warna bawaan frame),
+   * sehingga perubahan warna dari input #textColor tidak terlihat.
+   */
+  const textColorInput=document.getElementById('textColor');
+  const textColor=textColorInput ? textColorInput.value : f.fg;
+
+  ctx.fillStyle=textColor;
+
+  const caption=
+    document
+      .getElementById('captionInput')
+      .value
+      .trim();
+
+  ctx.textAlign='center';
+
+  ctx.font=
+    `600 29px "${selectedFont}"`;
+
+  ctx.fillText(
+    caption||' ',
+    W/2,
+    H-55
+  );
+
+  if(
+    document
+      .getElementById('showDate')
+      .checked
+  ){
+
+    ctx.font=
+      `500 17px "${selectedFont}"`;
+
+    ctx.fillText(
+      currentDate(),
+      W/2,
+      H-25
+    );
+  }
+}
+
+function makeResult(){
+  renderFinal();
+
+  finalDataURL=
+    document
+      .getElementById('finalPreview')
+      .toDataURL('image/png');
+
+  document
+    .getElementById('resultImage')
+    .src=finalDataURL;
+
+  go('result');
+
+  notify(
+    'Photobooth kamu sudah jadi! 🎞️💕'
+  );
+}
+
+function downloadResult(){
+  if(!finalDataURL)return;
+
+  const a=document.createElement('a');
+
+  a.href=finalDataURL;
+  a.download='my-photobooth-strip.png';
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  notify(
+    'Foto berhasil disimpan! 💾✨'
+  );
+}
+
+function newPhoto(){
+  resetPhotos();
+  finalDataURL='';
+  go('frames');
+  notify('Yuk buat foto baru 📸');
+}
+
+
+function notify(msg){
+  const n=document.getElementById('notice');
+  n.textContent=msg;n.classList.add('show');
+  clearTimeout(window.nt);
+  window.nt=setTimeout(()=>n.classList.remove('show'),2400);
+}
+updateFrame();
+</script>
+</body>
+</html>
